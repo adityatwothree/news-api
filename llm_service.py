@@ -131,7 +131,7 @@ Response (JSON only):
                 entities=data.get('entities', []),
                 concepts=data.get('concepts', []),
                 intent=intent,
-                location=data.get('location') or user_location,
+                location=data.get('location') or (user_location.dict() if user_location else None),
                 search_query=data.get('search_query'),
                 category=data.get('category'),
                 source=data.get('source'),

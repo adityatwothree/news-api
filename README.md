@@ -37,10 +37,14 @@ pip install -r requirements.txt
 
 ### 2. Set Environment Variables
 
-Create a `.env` file in the project root:
+Create a `.env` file in the project root to configure the application. You can choose between Google Gemini and OpenAI as your LLM provider.
 
+**Option A: Use Google Gemini (Recommended)**
 ```env
-OPENAI_API_KEY=your_openai_api_key_here
+LLM_PROVIDER=gemini
+GEMINI_API_KEY=your_gemini_api_key_here
+# GEMINI_MODEL=gemini-pro (Optional, default is gemini-pro)
+
 DATABASE_URL=sqlite:///./news.db
 REDIS_URL=redis://localhost:6379
 ```
