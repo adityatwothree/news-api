@@ -4,6 +4,7 @@ from fastapi import FastAPI, Depends, HTTPException, Query, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import uvicorn
+from contextlib import asynccontextmanager
 
 from config import settings
 from models import (
@@ -15,13 +16,48 @@ from news_service import NewsService
 from llm_service import llm_service
 from cache_service import cache_service
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Initialize database and load data on startup."""
+    print("🚀 Starting up News API...")
+    print("=" * 50)
+    
+    try:
+        # Create database tables
+        print("1. Creating database tables...")
+        create_tables()
+        print("   ✅ Database tables created")
+        
+        # Load news data
+        print("2. Loading news data...")
+        populate_database_from_json("news_data.json")
+        print("   ✅ News data loaded successfully")
+        
+        # Generate sample user events for trending functionality
+        print("3. Generating sample user events...")
+        generate_sample_user_events(1000)
+        print("   ✅ Sample user events generated")
+        
+        print("🎉 Database initialization complete!")
+        print("=" * 50)
+        
+    except Exception as e:
+        print(f"❌ Error during startup: {e}")
+        print("The app will continue but some features may not work properly.")
+        print("=" * 50)
+    
+    yield
+    
+    print("👋 Shutting down News API...")
+
+
 # Create FastAPI app
 app = FastAPI(
     title=settings.app_name,
     version=settings.version,
     description="A contextual news data retrieval system with LLM-powered query analysis and location-based trending news",
     docs_url="/docs",
-    redoc_url="/redoc"
+    lifespan=lifespan
 )
 
 # Add CORS middleware
@@ -32,30 +68,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize database and load data on startup."""
-    print("Starting up News API...")
-    
-    # Create database tables
-    create_tables()
-    print("Database tables created.")
-    
-    # Load news data
-    try:
-        populate_database_from_json("news_data.json")
-        print("News data loaded successfully.")
-    except Exception as e:
-        print(f"Error loading news data: {e}")
-    
-    # Generate sample user events for trending functionality
-    try:
-        generate_sample_user_events(1000)
-        print("Sample user events generated.")
-    except Exception as e:
-        print(f"Error generating user events: {e}")
 
 
 @app.get("/", response_model=dict)
@@ -74,15 +86,20 @@ async def health_check():
     """Health check endpoint."""
     try:
         # Test database connection
+        from sqlalchemy import text
         db = next(get_db())
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         db.close()
         database_connected = True
-    except Exception:
+    except Exception as e:
+        print(f"Database health check failed: {e}")
         database_connected = False
     
     # Test Redis connection
-    redis_connected = cache_service.redis_client is not None
+    try:
+        redis_connected = cache_service.redis_client is not None and cache_service.redis_client.ping()
+    except Exception:
+        redis_connected = False
     
     return HealthResponse(
         status="healthy" if database_connected else "unhealthy",
@@ -261,15 +278,18 @@ async def get_nearby_news(
 
 @app.get("/api/v1/news/trending", response_model=TrendingResponse)
 async def get_trending_news(
-    request: TrendingQueryRequest,
+    latitude: float = Query(..., ge=-90.0, le=90.0, description="Latitude"),
+    longitude: float = Query(..., ge=-180.0, le=180.0, description="Longitude"),
+    radius_km: float = Query(default=10.0, ge=0.1, le=100.0, description="Radius in kilometers"),
+    limit: int = Query(default=5, ge=1, le=50, description="Number of articles to return"),
     db: Session = Depends(get_db)
 ):
     """Get trending news articles based on user interactions."""
     try:
         # Check cache first
         cached_data = await cache_service.get_trending_cache(
-            request.latitude, request.longitude, 
-            request.radius_km, request.limit
+            latitude, longitude, 
+            radius_km, limit
         )
         
         if cached_data:
@@ -278,14 +298,14 @@ async def get_trending_news(
         # Get trending news
         news_service = NewsService(db)
         trending_response = await news_service.get_trending_news(
-            request.latitude, request.longitude, 
-            request.radius_km, request.limit
+            latitude, longitude, 
+            radius_km, limit
         )
         
         # Cache the result
         await cache_service.set_trending_cache(
-            request.latitude, request.longitude,
-            request.radius_km, request.limit,
+            latitude, longitude,
+            radius_km, limit,
             trending_response.dict()
         )
         

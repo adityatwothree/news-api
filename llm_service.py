@@ -9,7 +9,9 @@ from config import settings
 
 # Initialize OpenAI client
 if settings.openai_api_key:
-    openai.api_key = settings.openai_api_key
+    client = openai.OpenAI(api_key=settings.openai_api_key)
+else:
+    client = None
 
 
 class LLMService:
@@ -21,9 +23,12 @@ class LLMService:
     async def analyze_query(self, query: str, user_location: Optional[Dict[str, float]] = None) -> QueryAnalysis:
         """Analyze user query to extract entities, concepts, and intent."""
         try:
+            if not client:
+                return self._fallback_query_analysis(query, user_location)
+                
             prompt = self._build_query_analysis_prompt(query, user_location)
             
-            response = await openai.ChatCompletion.acreate(
+            response = await client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": "You are an expert at analyzing news queries to extract entities, concepts, and determine user intent."},
@@ -217,6 +222,9 @@ Response (JSON only):
     async def summarize_article(self, title: str, description: str) -> str:
         """Generate a summary for an article using LLM."""
         try:
+            if not client:
+                return description[:200] + "..." if len(description) > 200 else description
+                
             prompt = f"""
 Summarize this news article in 2-3 sentences, focusing on the key facts and main points:
 
@@ -226,7 +234,7 @@ Description: {description}
 Summary:
 """
             
-            response = await openai.ChatCompletion.acreate(
+            response = await client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": "You are an expert at summarizing news articles concisely and accurately."},

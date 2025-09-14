@@ -2,7 +2,7 @@
 
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc, asc, func
-from typing import List, Optional, Dict, Tuple
+from typing import List
 import json
 import math
 from datetime import datetime, timedelta
@@ -20,8 +20,15 @@ class NewsService:
     
     async def get_news_by_category(self, category: str, limit: int = 5) -> List[NewsArticle]:
         """Get news articles by category."""
+        # Try multiple search patterns to handle different JSON storage formats
         articles = self.db.query(NewsArticleDB).filter(
-            NewsArticleDB.category.contains(f'"{category}"')
+            or_(
+                NewsArticleDB.category.contains(f'"{category}"'),  # JSON array format
+                NewsArticleDB.category.contains(f"'{category}'"),  # Single quotes
+                NewsArticleDB.category.contains(category),         # Direct string
+                NewsArticleDB.category.like(f'%"{category}"%'),    # Like with quotes
+                NewsArticleDB.category.like(f'%{category}%')       # Like without quotes
+            )
         ).order_by(desc(NewsArticleDB.publication_date)).limit(limit).all()
         
         return await self._process_articles(articles)
