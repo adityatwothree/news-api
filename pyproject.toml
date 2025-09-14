@@ -1,0 +1,12 @@
+[tool.ruff.lint]
+extend-select = [
+    "UP", # pyupgrade
+    #"D",   # pydocstyle
+    "I",   # isort
+    "SIM", # flake8-simplify
+    "B",   # flake8-bugbear
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
