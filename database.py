@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from typing import List
 
+from loguru import logger
 from sqlalchemy import (
     Column,
     DateTime,
@@ -84,13 +85,13 @@ def populate_database_from_json(file_path: str):
     try:
         # Check if data already exists
         if db.query(NewsArticleDB).count() > 0:
-            print("Database already contains news articles. Skipping data load.")
+            logger.info("Database already contains news articles. Skipping data load.")
             return
 
-        print(f"Loading news data from {file_path}...")
+        logger.info(f"Loading news data from {file_path}...")
         news_data = load_news_data_from_json(file_path)
 
-        print(f"Found {len(news_data)} articles. Inserting into database...")
+        logger.info(f"Found {len(news_data)} articles. Inserting into database...")
 
         for article_data in news_data:
             # Convert category list to JSON string for SQLite
@@ -113,10 +114,10 @@ def populate_database_from_json(file_path: str):
             db.add(article)
 
         db.commit()
-        print(f"Successfully loaded {len(news_data)} articles into database.")
+        logger.info(f"Successfully loaded {len(news_data)} articles into database.")
 
     except Exception as e:
-        print(f"Error loading data: {e}")
+        logger.info(f"Error loading data: {e}")
         db.rollback()
         raise
     finally:
@@ -135,10 +136,10 @@ def generate_sample_user_events(num_events: int = 1000):
         article_ids = [article.id for article in db.query(NewsArticleDB).all()]
 
         if not article_ids:
-            print("No articles found. Cannot generate user events.")
+            logger.info("No articles found. Cannot generate user events.")
             return
 
-        print(f"Generating {num_events} sample user events...")
+        logger.info(f"Generating {num_events} sample user events...")
 
         event_types = ["view", "click", "share", "like"]
 
@@ -180,10 +181,10 @@ def generate_sample_user_events(num_events: int = 1000):
             db.add(event)
 
         db.commit()
-        print(f"Successfully generated {num_events} user events.")
+        logger.info(f"Successfully generated {num_events} user events.")
 
     except Exception as e:
-        print(f"Error generating user events: {e}")
+        logger.info(f"Error generating user events: {e}")
         db.rollback()
         raise
     finally:

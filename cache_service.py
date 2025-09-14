@@ -3,6 +3,7 @@ import json
 from typing import Any, Dict, Optional
 
 import redis
+from loguru import logger
 
 from config import settings
 
@@ -10,7 +11,7 @@ try:
     redis_client = redis.from_url(settings.redis_url, decode_responses=True)
     redis_client.ping()  # Test connection
     REDIS_AVAILABLE = True
-except:
+except Exception:
     REDIS_AVAILABLE = False
     redis_client = None
 
@@ -49,7 +50,7 @@ class CacheService:
                 return json.loads(cached_data)
 
         except Exception as e:
-            print(f"Error getting cache: {e}")
+            logger.info(f"Error getting cache: {e}")
 
         return None
 
@@ -73,7 +74,7 @@ class CacheService:
             return True
 
         except Exception as e:
-            print(f"Error setting cache: {e}")
+            logger.info(f"Error setting cache: {e}")
             return False
 
     def clear_trending_cache(self, pattern: str = "trending:*") -> bool:
@@ -88,7 +89,7 @@ class CacheService:
             return True
 
         except Exception as e:
-            print(f"Error clearing cache: {e}")
+            logger.info(f"Error clearing cache: {e}")
             return False
 
     def get_cache_stats(self) -> Dict[str, Any]:

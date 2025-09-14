@@ -27,31 +27,31 @@ from news_service import NewsService
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize database and load data on startup."""
-    print("🚀 Starting up News API...")
-    print("=" * 50)
+    logger.info("🚀 Starting up News API...")
+    logger.info("=" * 50)
 
     try:
         # Create database tables
-        print("1. Creating database tables...")
+        logger.info("1. Creating database tables...")
         create_tables()
-        print("Database tables created")
+        logger.info("Database tables created")
 
         # Load news data
-        print("2. Loading news data...")
+        logger.info("2. Loading news data...")
         populate_database_from_json("news_data.json")
-        print("News data loaded successfully")
+        logger.info("News data loaded successfully")
 
         # Generate sample user events for trending functionality
-        print("3. Generating sample user events...")
+        logger.info("3. Generating sample user events...")
         generate_sample_user_events(1000)
-        print("Sample user events generated")
+        logger.info("Sample user events generated")
 
     except Exception as e:
         logger.error(f"Error during startup: {e}")
 
     yield
 
-    print("👋 Shutting down News API...")
+    logger.info("👋 Shutting down News API...")
 
 
 # Create FastAPI app
@@ -96,7 +96,7 @@ async def health_check():
         db.close()
         database_connected = True
     except Exception as e:
-        print(f"Database health check failed: {e}")
+        logger.info(f"Database health check failed: {e}")
         database_connected = False
 
     # Test Redis connection
@@ -370,7 +370,7 @@ async def _generate_article_summary(article_id: str, title: str, description: st
         finally:
             db.close()
     except Exception as e:
-        print(f"Error generating summary for article {article_id}: {e}")
+        logger.info(f"Error generating summary for article {article_id}: {e}")
 
 
 if __name__ == "__main__":

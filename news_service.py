@@ -3,6 +3,7 @@ import math
 from datetime import datetime, timedelta
 from typing import List
 
+from loguru import logger
 from sqlalchemy import and_, desc, func, or_
 from sqlalchemy.orm import Session
 
@@ -238,7 +239,9 @@ class NewsService:
                     article.llm_summary = llm_summary
                     self.db.commit()
                 except Exception as e:
-                    print(f"Error generating summary for article {article.id}: {e}")
+                    logger.info(
+                        f"Error generating summary for article {article.id}: {e}"
+                    )
                     llm_summary = (
                         article.description[:200] + "..."
                         if len(article.description) > 200
@@ -252,7 +255,7 @@ class NewsService:
                     if isinstance(article.category, str)
                     else article.category
                 )
-            except:
+            except Exception:
                 category = [article.category] if article.category else []
 
             processed_article = NewsArticle(

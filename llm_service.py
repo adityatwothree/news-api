@@ -4,6 +4,7 @@ from typing import Dict, List, Optional
 
 import google.generativeai as genai
 import openai
+from loguru import logger
 
 from config import settings
 from models import QueryAnalysis, QueryIntent
@@ -40,7 +41,7 @@ class LLMService:
                 return self._fallback_query_analysis(query, user_location)
 
         except Exception as e:
-            print(f"Error analyzing query: {e}")
+            logger.info(f"Error analyzing query: {e}")
             # Fallback to basic analysis
             return self._fallback_query_analysis(query, user_location)
 
@@ -153,7 +154,7 @@ Response (JSON only):
             )
 
         except Exception as e:
-            print(f"Error parsing query analysis: {e}")
+            logger.info(f"Error parsing query analysis: {e}")
             return self._fallback_query_analysis(result, user_location)
 
     def _fallback_query_analysis(
@@ -301,7 +302,7 @@ Response (JSON only):
                 )
 
         except Exception as e:
-            print(f"Error generating summary: {e}")
+            logger.info(f"Error generating summary: {e}")
             # Fallback to truncated description
             return description[:200] + "..." if len(description) > 200 else description
 
