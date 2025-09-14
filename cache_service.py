@@ -1,10 +1,9 @@
-"""Caching service for trending news feeds."""
-
-import json
 import hashlib
-from typing import Optional, Dict, Any
-from datetime import datetime, timedelta
+import json
+from typing import Any, Dict, Optional
+
 import redis
+
 from config import settings
 
 try:

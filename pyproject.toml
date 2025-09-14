@@ -1,6 +1,6 @@
 [tool.ruff.lint]
 extend-select = [
-    "UP", # pyupgrade
+    # "UP", # pyupgrade
     #"D",   # pydocstyle
     "I",   # isort
     "SIM", # flake8-simplify
@@ -9,4 +9,3 @@ extend-select = [
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
-

@@ -1,21 +1,18 @@
-"""Database models and connection setup."""
+import json
+from datetime import datetime
+from typing import List
 
 from sqlalchemy import (
-    create_engine,
     Column,
-    String,
-    Float,
     DateTime,
+    Float,
+    String,
     Text,
-    JSON,
-    Integer,
+    create_engine,
 )
+from sqlalchemy.dialects.sqlite import JSON as SQLiteJSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.dialects.sqlite import JSON as SQLiteJSON
-from datetime import datetime
-from typing import List, Optional
-import json
 
 from config import settings
 

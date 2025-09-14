@@ -1,9 +1,8 @@
-"""Pydantic models for the News API application."""
-
 from datetime import datetime
-from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
 
 
 class QueryIntent(str, Enum):

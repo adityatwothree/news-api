@@ -1,28 +1,28 @@
 """Main FastAPI application for the Contextual News Data Retrieval System."""
 
-from fastapi import FastAPI, Depends, HTTPException, Query, BackgroundTasks
-from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
-import uvicorn
 from contextlib import asynccontextmanager
 
+import uvicorn
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+
+from cache_service import cache_service
 from config import settings
+from database import (
+    create_tables,
+    generate_sample_user_events,
+    get_db,
+    populate_database_from_json,
+)
+from llm_service import llm_service
 from models import (
+    HealthResponse,
     NewsQueryRequest,
     NewsResponse,
-    TrendingQueryRequest,
     TrendingResponse,
-    HealthResponse,
-)
-from database import (
-    get_db,
-    create_tables,
-    populate_database_from_json,
-    generate_sample_user_events,
 )
 from news_service import NewsService
-from llm_service import llm_service
-from cache_service import cache_service
 
 
 @asynccontextmanager
@@ -363,7 +363,7 @@ async def _generate_article_summary(article_id: str, title: str, description: st
     try:
         summary = await llm_service.summarize_article(title, description)
         # Update database with summary
-        from database import SessionLocal, NewsArticleDB
+        from database import NewsArticleDB, SessionLocal
 
         db = SessionLocal()
         try:

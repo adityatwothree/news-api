@@ -1,15 +1,14 @@
-"""News service for data retrieval and processing."""
-
-from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, desc, asc, func
-from typing import List
 import json
 import math
 from datetime import datetime, timedelta
+from typing import List
 
-from models import NewsArticle, QueryAnalysis, QueryIntent, TrendingResponse
+from sqlalchemy import and_, desc, func, or_
+from sqlalchemy.orm import Session
+
 from database import NewsArticleDB, UserEventDB
 from llm_service import llm_service
+from models import NewsArticle, QueryAnalysis, QueryIntent, TrendingResponse
 
 
 class NewsService:

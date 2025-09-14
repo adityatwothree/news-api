@@ -1,12 +1,12 @@
-"""LLM service for query processing and article summarization."""
-
-import openai
-import google.generativeai as genai
-from typing import List, Dict, Optional
 import json
 import re
-from models import QueryAnalysis, QueryIntent
+from typing import Dict, List, Optional
+
+import google.generativeai as genai
+import openai
+
 from config import settings
+from models import QueryAnalysis, QueryIntent
 
 # Initialize clients based on provider
 openai_client = None
@@ -175,13 +175,13 @@ Response (JSON only):
             ]
         ):
             intent = QueryIntent.CATEGORY
-            category = self._extract_category(query_lower)
+            self._extract_category(query_lower)
         elif any(
             word in query_lower
             for word in ["from", "source", "cnn", "bbc", "reuters", "times"]
         ):
             intent = QueryIntent.SOURCE
-            source = self._extract_source(query_lower)
+            self._extract_source(query_lower)
         elif any(
             word in query_lower for word in ["near", "nearby", "location", "around"]
         ):
