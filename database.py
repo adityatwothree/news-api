@@ -46,7 +46,7 @@ class UserEventDB(Base):
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
     timestamp = Column(DateTime, nullable=False, index=True)
-    metadata = Column(SQLiteJSON, nullable=True)
+    event_metadata = Column(SQLiteJSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
@@ -161,7 +161,7 @@ def generate_sample_user_events(num_events: int = 1000):
                 latitude=article.latitude + lat_offset,
                 longitude=article.longitude + lon_offset,
                 timestamp=timestamp,
-                metadata={"generated": True}
+                event_metadata={"generated": True}
             )
             db.add(event)
         

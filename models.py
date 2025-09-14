@@ -53,7 +53,7 @@ class UserEvent(BaseModel):
     latitude: float = Field(ge=-90.0, le=90.0)
     longitude: float = Field(ge=-180.0, le=180.0)
     timestamp: datetime
-    metadata: Optional[Dict[str, Any]] = None
+    event_metadata: Optional[Dict[str, Any]] = None
     
     class Config:
         json_encoders = {
