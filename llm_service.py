@@ -1,50 +1,78 @@
 """LLM service for query processing and article summarization."""
 
 import openai
+import google.generativeai as genai
 from typing import List, Dict, Optional
 import json
 import re
 from models import QueryAnalysis, QueryIntent
 from config import settings
 
-# Initialize OpenAI client
-if settings.openai_api_key:
-    client = openai.OpenAI(api_key=settings.openai_api_key)
-else:
-    client = None
+# Initialize clients based on provider
+openai_client = None
+gemini_client = None
+
+if settings.llm_provider == "openai" and settings.openai_api_key:
+    openai_client = openai.OpenAI(api_key=settings.openai_api_key)
+elif settings.llm_provider == "gemini" and settings.gemini_api_key:
+    genai.configure(api_key=settings.gemini_api_key)
+    gemini_client = genai.GenerativeModel(settings.gemini_model)
 
 
 class LLMService:
     """Service for LLM operations."""
     
     def __init__(self):
-        self.model = settings.openai_model
+        self.provider = settings.llm_provider
+        self.openai_model = settings.openai_model
+        self.gemini_model = settings.gemini_model
     
     async def analyze_query(self, query: str, user_location: Optional[Dict[str, float]] = None) -> QueryAnalysis:
         """Analyze user query to extract entities, concepts, and intent."""
         try:
-            if not client:
+            if self.provider == "openai" and openai_client:
+                return await self._analyze_with_openai(query, user_location)
+            elif self.provider == "gemini" and gemini_client:
+                return await self._analyze_with_gemini(query, user_location)
+            else:
                 return self._fallback_query_analysis(query, user_location)
                 
-            prompt = self._build_query_analysis_prompt(query, user_location)
-            
-            response = await client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": "You are an expert at analyzing news queries to extract entities, concepts, and determine user intent."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.1,
-                max_tokens=500
-            )
-            
-            result = response.choices[0].message.content
-            return self._parse_query_analysis(result, user_location)
-            
         except Exception as e:
             print(f"Error analyzing query: {e}")
             # Fallback to basic analysis
             return self._fallback_query_analysis(query, user_location)
+    
+    async def _analyze_with_openai(self, query: str, user_location: Optional[Dict[str, float]] = None) -> QueryAnalysis:
+        """Analyze query using OpenAI."""
+        prompt = self._build_query_analysis_prompt(query, user_location)
+        
+        response = await openai_client.chat.completions.create(
+            model=self.openai_model,
+            messages=[
+                {"role": "system", "content": "You are an expert at analyzing news queries to extract entities, concepts, and determine user intent."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.1,
+            max_tokens=500
+        )
+        
+        result = response.choices[0].message.content
+        return self._parse_query_analysis(result, user_location)
+    
+    async def _analyze_with_gemini(self, query: str, user_location: Optional[Dict[str, float]] = None) -> QueryAnalysis:
+        """Analyze query using Gemini."""
+        prompt = self._build_query_analysis_prompt(query, user_location)
+        
+        response = await gemini_client.generate_content_async(
+            prompt,
+            generation_config=genai.types.GenerationConfig(
+                temperature=0.1,
+                max_output_tokens=500,
+            )
+        )
+        
+        result = response.text
+        return self._parse_query_analysis(result, user_location)
     
     def _build_query_analysis_prompt(self, query: str, user_location: Optional[Dict[str, float]] = None) -> str:
         """Build prompt for query analysis."""
@@ -222,10 +250,21 @@ Response (JSON only):
     async def summarize_article(self, title: str, description: str) -> str:
         """Generate a summary for an article using LLM."""
         try:
-            if not client:
+            if self.provider == "openai" and openai_client:
+                return await self._summarize_with_openai(title, description)
+            elif self.provider == "gemini" and gemini_client:
+                return await self._summarize_with_gemini(title, description)
+            else:
                 return description[:200] + "..." if len(description) > 200 else description
                 
-            prompt = f"""
+        except Exception as e:
+            print(f"Error generating summary: {e}")
+            # Fallback to truncated description
+            return description[:200] + "..." if len(description) > 200 else description
+    
+    async def _summarize_with_openai(self, title: str, description: str) -> str:
+        """Generate summary using OpenAI."""
+        prompt = f"""
 Summarize this news article in 2-3 sentences, focusing on the key facts and main points:
 
 Title: {title}
@@ -233,23 +272,39 @@ Description: {description}
 
 Summary:
 """
-            
-            response = await client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": "You are an expert at summarizing news articles concisely and accurately."},
-                    {"role": "user", "content": prompt}
-                ],
+        
+        response = await openai_client.chat.completions.create(
+            model=self.openai_model,
+            messages=[
+                {"role": "system", "content": "You are an expert at summarizing news articles concisely and accurately."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3,
+            max_tokens=150
+        )
+        
+        return response.choices[0].message.content.strip()
+    
+    async def _summarize_with_gemini(self, title: str, description: str) -> str:
+        """Generate summary using Gemini."""
+        prompt = f"""
+Summarize this news article in 2-3 sentences, focusing on the key facts and main points:
+
+Title: {title}
+Description: {description}
+
+Summary:
+"""
+        
+        response = await gemini_client.generate_content_async(
+            prompt,
+            generation_config=genai.types.GenerationConfig(
                 temperature=0.3,
-                max_tokens=150
+                max_output_tokens=150,
             )
-            
-            return response.choices[0].message.content.strip()
-            
-        except Exception as e:
-            print(f"Error generating summary: {e}")
-            # Fallback to truncated description
-            return description[:200] + "..." if len(description) > 200 else description
+        )
+        
+        return response.text.strip()
 
 
 # Global LLM service instance

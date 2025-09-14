@@ -16,9 +16,12 @@ class Settings(BaseSettings):
     # Database Configuration
     database_url: str = "sqlite:///./news.db"
     
-    # OpenAI Configuration
+    # LLM Configuration
+    llm_provider: str = "gemini"  # "openai" or "gemini"
     openai_api_key: Optional[str] = None
     openai_model: str = "gpt-3.5-turbo"
+    gemini_api_key: Optional[str] = ""
+    gemini_model: str = "gemini-pro"
     
     # Redis Configuration (for caching)
     redis_url: str = "redis://localhost:6379"

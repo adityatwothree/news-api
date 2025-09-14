@@ -24,6 +24,12 @@ class UserEventType(str, Enum):
     LIKE = "like"
 
 
+class Location(BaseModel):
+    """Model for geographical location."""
+    latitude: float = Field(ge=-90.0, le=90.0, description="Latitude coordinate")
+    longitude: float = Field(ge=-180.0, le=180.0, description="Longitude coordinate")
+
+
 class NewsArticle(BaseModel):
     """Model for a news article."""
     id: str
@@ -66,7 +72,7 @@ class QueryAnalysis(BaseModel):
     entities: List[str] = Field(default_factory=list)
     concepts: List[str] = Field(default_factory=list)
     intent: QueryIntent
-    location: Optional[Dict[str, float]] = None  # {"latitude": float, "longitude": float}
+    location: Optional[Location] = None
     search_query: Optional[str] = None
     category: Optional[str] = None
     source: Optional[str] = None
@@ -86,36 +92,25 @@ class TrendingResponse(BaseModel):
     """Model for trending news response."""
     articles: List[NewsArticle]
     trending_scores: List[float]
-    location: Dict[str, float]
+    location: Location
     radius_km: float
     total_count: int
 
 
 class NewsQueryRequest(BaseModel):
     """Model for news query requests."""
-    query: str
-    location: Optional[Dict[str, float]] = None  # {"latitude": float, "longitude": float}
-    limit: int = Field(default=5, ge=1, le=50)
-    radius_km: Optional[float] = Field(default=10.0, ge=0.1, le=100.0)
-    
-    @validator('location')
-    def validate_location(cls, v):
-        if v is not None:
-            if 'latitude' not in v or 'longitude' not in v:
-                raise ValueError('Location must contain both latitude and longitude')
-            if not (-90 <= v['latitude'] <= 90):
-                raise ValueError('Latitude must be between -90 and 90')
-            if not (-180 <= v['longitude'] <= 180):
-                raise ValueError('Longitude must be between -180 and 180')
-        return v
+    query: str = Field(..., description="Natural language query for news articles")
+    location: Optional[Location] = Field(None, description="User's geographical location")
+    limit: int = Field(default=5, ge=1, le=50, description="Maximum number of articles to return")
+    radius_km: Optional[float] = Field(default=10.0, ge=0.1, le=100.0, description="Search radius in kilometers")
 
 
 class TrendingQueryRequest(BaseModel):
     """Model for trending news query requests."""
-    latitude: float = Field(ge=-90.0, le=90.0)
-    longitude: float = Field(ge=-180.0, le=180.0)
-    limit: int = Field(default=5, ge=1, le=50)
-    radius_km: float = Field(default=10.0, ge=0.1, le=100.0)
+    latitude: float = Field(ge=-90.0, le=90.0, description="Latitude coordinate")
+    longitude: float = Field(ge=-180.0, le=180.0, description="Longitude coordinate")
+    limit: int = Field(default=5, ge=1, le=50, description="Maximum number of articles to return")
+    radius_km: float = Field(default=10.0, ge=0.1, le=100.0, description="Search radius in kilometers")
 
 
 class ErrorResponse(BaseModel):
