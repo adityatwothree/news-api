@@ -1,10 +1,9 @@
-"""Main FastAPI application for the Contextual News Data Retrieval System."""
-
 from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from loguru import logger
 from sqlalchemy.orm import Session
 
 from cache_service import cache_service
@@ -35,25 +34,20 @@ async def lifespan(app: FastAPI):
         # Create database tables
         print("1. Creating database tables...")
         create_tables()
-        print("   ✅ Database tables created")
+        print("Database tables created")
 
         # Load news data
         print("2. Loading news data...")
         populate_database_from_json("news_data.json")
-        print("   ✅ News data loaded successfully")
+        print("News data loaded successfully")
 
         # Generate sample user events for trending functionality
         print("3. Generating sample user events...")
         generate_sample_user_events(1000)
-        print("   ✅ Sample user events generated")
-
-        print("🎉 Database initialization complete!")
-        print("=" * 50)
+        print("Sample user events generated")
 
     except Exception as e:
-        print(f"❌ Error during startup: {e}")
-        print("The app will continue but some features may not work properly.")
-        print("=" * 50)
+        logger.error(f"Error during startup: {e}")
 
     yield
 

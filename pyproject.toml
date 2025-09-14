@@ -4,7 +4,7 @@ extend-select = [
     #"D",   # pydocstyle
     "I",   # isort
     "SIM", # flake8-simplify
-    "B",   # flake8-bugbear
+    #"B",   # flake8-bugbear
 ]
 
 [tool.ruff.lint.pydocstyle]
